@@ -1,0 +1,62 @@
+{
+    "name": "glitchr/omnischolar",
+    "type": "library",
+    "description": "Omnischolar: one contract for a researcher's publications - author profiles, works, books and their editions, citations - read from OpenAlex, HAL, Crossref, ORCID, Open Library, arXiv and INSPIRE, merged and deduplicated, exported as BibTeX, RIS or CSL-JSON; and its Symfony bundle.",
+    "keywords": [
+        "scholarly",
+        "publications",
+        "bibliography",
+        "openalex",
+        "hal",
+        "crossref",
+        "orcid",
+        "bibtex",
+        "csl",
+        "omnischolar"
+    ],
+    "license": "LGPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "Marco Meyer",
+            "email": "marco.meyer@glitchr.io"
+        }
+    ],
+    "require": {
+        "php": ">=8.2",
+        "symfony/http-client-contracts": "^3.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0",
+        "symfony/config": "^6.4|^7.0|^8.0",
+        "symfony/dependency-injection": "^6.4|^7.0|^8.0",
+        "symfony/http-client": "^6.4|^7.0|^8.0",
+        "symfony/http-kernel": "^6.4|^7.0|^8.0"
+    },
+    "suggest": {
+        "omnischolar/openalex": "OpenAlex: profiles, works, citations, h-index",
+        "omnischolar/hal": "HAL: French open archive, filtered by domain (shs.droit)",
+        "omnischolar/crossref": "Crossref: reference metadata by DOI",
+        "omnischolar/orcid": "ORCID: identity, positions and degrees, declared works",
+        "omnischolar/openlibrary": "Open Library: books, editions, covers",
+        "omnischolar/arxiv": "arXiv: preprints",
+        "omnischolar/inspire": "INSPIRE-HEP: high-energy physics literature and citations",
+        "ext-intl": "Better title matching across accents in the Merger"
+    },
+    "autoload": {
+        "psr-4": {
+            "Omnischolar\\": ""
+        },
+        "exclude-from-classmap": [
+            "/Tests/",
+            "/docker/"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Omnischolar\\Tests\\": "Tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
