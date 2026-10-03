@@ -26,7 +26,8 @@ foreach ($plugins as $slug => [$testsNs]) {
         $testDir = "$dir/Tests";
         $sources[$slug] = 'checkout';
     } else {
-        $repositories[] = ['type' => 'vcs', 'url' => "https://github.com/glitchr-studio/omnischolar-$slug.git"];
+        // A plain git clone over HTTPS: no GitHub API (anonymous calls are rate limited), no ssh in the image.
+        $repositories[] = ['type' => 'git', 'url' => "https://github.com/glitchr-studio/omnischolar-$slug.git"];
         $testDir = "$out/vendor/omnischolar/$slug/Tests";
         $sources[$slug] = 'github';
     }
