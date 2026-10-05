@@ -20,8 +20,9 @@ $books[0]->editions;                         // the editions of one book, newest
 
 This package holds the contract (`Source\SourceInterface`, `Source\SourceFactory`, `Registry`),
 the models (`Work`, `Author`, `Contributor`, `Identifier`, `Venue`, `Metrics`, `Affiliation`), the
-`Merger`, the `Collector`, the `Export` and the Symfony bundle. It requires nothing but
-`symfony/http-client-contracts`. Each source is a package of its own:
+`Merger`, the `Collector`, the `Export` and a bridge for Symfony. It needs no framework: it
+requires nothing but `symfony/http-client-contracts`, each source package `symfony/http-client`.
+Each source is a package of its own:
 
 | Package | Source | Key |
 |---|---|---|
@@ -52,7 +53,37 @@ the editions of a book are grouped under the newest one.
 - [Symfony](docs/symfony.md)
 - [The Docker harness](docs/harness.md)
 
+## Plain PHP
+
+```sh
+composer require glitchr/omnischolar omnischolar/openalex omnischolar/hal
+```
+
+```php
+use Omnischolar\Collector;
+use Omnischolar\Hal\HalSourceFactory;
+use Omnischolar\OpenAlex\OpenAlexSourceFactory;
+use Omnischolar\Registry;
+use Symfony\Component\HttpClient\HttpClient;
+
+$http = HttpClient::create();   // or the application's client; a MockHttpClient in a test
+$registry = new Registry([new OpenAlexSourceFactory($http), new HalSourceFactory($http)], [
+    'openalex' => ['factory' => 'openalex', 'options' => ['mailto' => 'you@example.org']],
+    'hal' => ['factory' => 'hal'],
+]);
+$openalex = $registry->get('openalex');
+$works = (new Collector($registry))->collect(['openalex' => 'A5108007452', 'hal' => 'Keitaro Nakatani']);
+```
+
+No bundle, no container: a factory per source package, the registry built by hand.
+[docs/installation.md](docs/installation.md) opens on a whole script that runs as it is, against
+the real services.
+
 ## Symfony
+
+`Omnischolar\Bridge\Symfony\OmnischolarBundle` does that wiring in a Symfony application
+([docs/symfony.md](docs/symfony.md)); its components (`symfony/config`,
+`symfony/dependency-injection`, `symfony/http-kernel`) are not required by this package.
 
 ```yaml
 omnischolar:
@@ -76,6 +107,7 @@ cd docker && cp .env.dist .env
 docker compose run --rm omnischolar sources
 docker compose run --rm omnischolar works openalex A5108007452 --from 2024 --to 2024
 docker compose run --rm omnischolar merge openlibrary:"Monica Neagoy" crossref:"Monica Neagoy"
+docker compose run --rm omnischolar bare      # plain PHP: no bundle, no container, and what PHP loaded
 docker compose run --rm omnischolar test
 ```
 
