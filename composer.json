@@ -40,7 +40,10 @@
         "omnischolar/openlibrary": "Open Library: books, editions, covers",
         "omnischolar/arxiv": "arXiv: preprints",
         "omnischolar/inspire": "INSPIRE-HEP: high-energy physics literature and citations",
-        "ext-intl": "Better title matching across accents in the Merger"
+        "ext-intl": "Better title matching across accents in the Merger",
+        "symfony/config": "In a Symfony application: the configuration of Omnischolar\\Bridge\\Symfony\\OmnischolarBundle",
+        "symfony/dependency-injection": "In a Symfony application: the services of Omnischolar\\Bridge\\Symfony\\OmnischolarBundle",
+        "symfony/http-kernel": "In a Symfony application: Omnischolar\\Bridge\\Symfony\\OmnischolarBundle itself"
     },
     "autoload": {
         "psr-4": {
