@@ -1,0 +1,79 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Omnischolar in bare PHP: no bundle, no container, no console component.
+ * The registry is built by hand from the source packages installed, each
+ * source says what it can do, then OpenAlex is asked for the works Keitaro
+ * Nakatani (A5108007452) published in 2024 - the real service, no key
+ * needed - and the script lists what PHP loaded on the way.
+ *
+ *   docker compose run --rm omnischolar bare              # exits 1 when a class of a framework was loaded
+ *   docker compose run --rm omnischolar bare --recorded   # the answer recorded on 2026-10-04 (cut down) instead of a call
+ *   docker compose run --rm omnischolar bare --json       # the same, whole: every class and file loaded
+ *
+ * OMNISCHOLAR_AUTOLOAD names another autoloader than the harness's.
+ */
+
+use Omnischolar\Model\Work;
+use Omnischolar\Registry;
+use Omnischolar\Source\Capability;
+use Omnischolar\Source\Query;
+use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpClient\MockHttpClient;
+use Symfony\Component\HttpClient\Response\MockResponse;
+
+require getenv('OMNISCHOLAR_AUTOLOAD') ?: '/harness/vendor/autoload.php';
+
+$recorded = \in_array('--recorded', $argv, true);
+$http = !$recorded ? null : new MockHttpClient(static fn (string $method, string $url): MockResponse => str_contains(rawurldecode($url), 'author.id:A5108007452') && str_contains(rawurldecode($url), 'publication_year:2024-2024')
+    ? new MockResponse((string) file_get_contents(__DIR__.'/../recorded/openalex-works-2024.json'))
+    : new MockResponse('{"error": "Not recorded."}', ['http_code' => 404]));
+
+$factories = [];
+foreach (require __DIR__.'/../plugins.php' as [, $class]) {
+    if (class_exists($class)) {
+        $factories[] = new $class($http ??= HttpClient::create(['timeout' => 60]));
+    }
+}
+$installed = array_map(static fn ($factory) => $factory->getName(), $factories);
+$config = array_filter(require __DIR__.'/../config/sources.php', static fn (array $source) => \in_array($source['factory'], $installed, true));
+$registry = new Registry($factories, array_map(static fn (array $source) => ['factory' => $source['factory'], 'options' => array_filter($source['options'], static fn ($value) => null !== $value)], $config));
+
+$report = ['recorded' => $recorded, 'sources' => [], 'works' => null];
+foreach ($registry->all() as $name => $source) {
+    $report['sources'][$name] = array_map(static fn (Capability $capability) => $capability->value, $source->capabilities());
+}
+if ($registry->has('openalex')) {
+    $page = $registry->get('openalex')->works('A5108007452', new Query(from: 2024, to: 2024));
+    $report['works'] = array_map(static fn (Work $work) => ['date' => $work->date, 'type' => $work->type->value, 'title' => $work->title, 'venue' => $work->venue?->name, 'doi' => $work->doi()], $page->works);
+}
+
+// What PHP loaded to get there: the proof that no framework was needed.
+$report['symbols'] = [...get_declared_classes(), ...get_declared_interfaces(), ...get_declared_traits()];
+$report['files'] = get_included_files();
+$framework = array_values(preg_grep('~^(?:Symfony\\\\Component\\\\(?:DependencyInjection|Config|HttpKernel|HttpFoundation)|Symfony\\\\Bundle|Doctrine|Twig)\\\\~', $report['symbols']));
+$symfony = array_values(array_unique(array_map(static fn (string $s) => implode('\\', \array_slice(explode('\\', $s), 0, 3)), preg_grep('~^Symfony\\\\(?!Polyfill)~', $report['symbols']))));
+sort($symfony);
+
+if (\in_array('--json', $argv, true)) {
+    echo json_encode($report, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE), "\n";
+    exit($framework ? 1 : 0);
+}
+
+echo "Omnischolar in bare PHP: the registry built by hand, no bundle, no container.\n\n";
+foreach ($report['sources'] as $name => $capabilities) {
+    printf("  %-12s %s\n", $name, implode(' ', $capabilities));
+}
+if (!$report['sources']) {
+    echo "  no omnischolar/* source package is installed\n";
+}
+if (null !== $report['works']) {
+    echo "\nOpenAlex, the works of A5108007452 (Keitaro Nakatani) in 2024", $recorded ? ', from the answer recorded on 2026-10-04' : ', asked of api.openalex.org', ":\n";
+    foreach ($report['works'] as $work) {
+        printf("  %s  %-8s %s - %s\n", $work['date'], $work['type'], $work['title'], $work['venue']);
+    }
+}
+echo "\nLoaded from Symfony: ", implode(', ', $symfony) ?: 'nothing', "\n";
+echo 'Classes of a framework (DependencyInjection, Config, HttpKernel, HttpFoundation, a bundle, Doctrine, Twig): ', $framework ? implode(', ', $framework) : 'none', "\n";
+exit($framework ? 1 : 0);

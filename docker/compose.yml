@@ -9,6 +9,7 @@
 #   docker compose run --rm omnischolar search hal "responsabilité civile" --domain shs.droit --from 2024
 #   docker compose run --rm omnischolar merge openlibrary:"Monica Neagoy" crossref:"Monica Neagoy"
 #   docker compose run --rm omnischolar merge openalex:A5108007452 hal:"Keitaro Nakatani" --from 2024 --format bibtex
+#   docker compose run --rm omnischolar bare                   # plain PHP: no bundle, no container, and what PHP loaded
 #   docker compose run --rm omnischolar test                   # every package's tests
 #
 # Sources come from GitHub (branch 1.x) unless their checkout sits under
